@@ -1,0 +1,2666 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PDF 合併、壓縮與轉簡報大師 - 專業瀏覽器端本地 PDF 工具箱</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF-LIB CDN -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- PDFJS CDN (For Raster-based Compression and Photo rendering) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- PptxGenJS CDN (For PDF to PPTX conversion) -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="files" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        PDF 萬能工具箱 Pro
+                    </h1>
+                    <p class="text-xs text-slate-400">極速合併 • 智能壓縮 • 高清轉圖片 • PDF 轉 PPTX • 圖片轉 PDF</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- How to set Save Path button -->
+                <button onclick="toggleHelpModal(true)" class="hidden md:flex items-center space-x-1.5 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20 transition-all">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    <span>如何自訂儲存路徑？</span>
+                </button>
+
+                <div class="flex items-center space-x-2 text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-500/20 animate-pulse">
+                    <i data-lucide="shield-check" class="w-4 h-4 mr-1"></i>
+                    本機安全加密計算
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8">
+        
+        <!-- Tab Navigation Bar -->
+        <div class="flex border-b border-slate-800 mb-8 max-w-2xl mx-auto bg-slate-900/60 p-1.5 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-none">
+            <button id="tab-merge-btn" onclick="switchTab('merge')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-white bg-indigo-600/90 shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5 min-w-[95px]">
+                <i data-lucide="combine" class="w-3.5 h-3.5"></i>
+                PDF 合併
+            </button>
+            <button id="tab-compress-btn" onclick="switchTab('compress')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-400 hover:text-slate-100 flex items-center justify-center gap-1.5 min-w-[95px]">
+                <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                批量壓縮
+            </button>
+            <button id="tab-photo-btn" onclick="switchTab('photo')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-400 hover:text-slate-100 flex items-center justify-center gap-1.5 min-w-[95px]">
+                <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                PDF 轉圖片
+            </button>
+            <button id="tab-pptx-btn" onclick="switchTab('pptx')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-400 hover:text-slate-100 flex items-center justify-center gap-1.5 min-w-[95px]">
+                <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                PDF 轉 PPTX
+            </button>
+            <button id="tab-topdf-btn" onclick="switchTab('topdf')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-400 hover:text-slate-100 flex items-center justify-center gap-1.5 min-w-[105px]">
+                <i data-lucide="file-image" class="w-3.5 h-3.5"></i>
+                圖片轉 PDF
+            </button>
+        </div>
+
+        <!-- Mobile Help trigger -->
+        <div class="md:hidden text-center mb-6">
+            <button onclick="toggleHelpModal(true)" class="inline-flex items-center space-x-1 text-xs text-indigo-400 hover:underline">
+                <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                <span>如何自訂下載/輸出路徑？</span>
+            </button>
+        </div>
+
+        <!-- ==================== TAB 1: MERGE SECTION ==================== -->
+        <div id="merge-section" class="space-y-6">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3">
+                    輕鬆結合多個 PDF 檔案
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    只需拖曳上傳，即可任意排序、選定合併頁碼範圍。無限制、免註冊、無浮水印。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Side: Dropzone & Settings -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dropzone Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2 text-indigo-400"></i>
+                            上傳合併檔案
+                        </h3>
+                        <!-- Interactive Area -->
+                        <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-950/50 hover:bg-slate-900/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300">
+                            <input type="file" id="file-input" class="hidden" accept="application/pdf" multiple>
+                            <div class="p-4 bg-slate-850 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="file-up" class="w-8 h-8 text-slate-400 group-hover:text-indigo-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-200 text-sm mb-1">拖曳 PDF 檔案至此處</p>
+                            <p class="text-xs text-slate-500 mb-4">或點擊本區塊選擇檔案</p>
+                            <span class="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-400 border border-slate-700/50">支援多選上傳</span>
+                        </div>
+                    </div>
+
+                    <!-- Export Settings Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="settings" class="w-5 h-5 mr-2 text-indigo-400"></i>
+                            合併輸出設定
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="output-filename" class="block text-xs font-medium text-slate-400 mb-2">輸出檔案名稱</label>
+                                <div class="relative">
+                                    <input type="text" id="output-filename" value="merged_document" 
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-100 rounded-xl py-2.5 pl-3 pr-12 text-sm outline-none transition-all">
+                                    <span class="absolute right-3 top-2.5 text-sm text-slate-500 font-semibold pointer-events-none">.pdf</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs text-slate-400 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>已選檔案總數:</span>
+                                    <span id="summary-count" class="font-bold text-white">0 個</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>預估總頁數:</span>
+                                    <span id="summary-pages" class="font-bold text-white">0 頁</span>
+                                </div>
+                            </div>
+                            <button id="btn-merge" disabled
+                                class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                <i data-lucide="combine" class="w-5 h-5"></i>
+                                <span>合併並選擇位置儲存</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Interactive Files List -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                                <h3 class="text-lg font-semibold text-white flex items-center">
+                                    <i data-lucide="list-ordered" class="w-5 h-5 mr-2 text-indigo-400"></i>
+                                    合併排序與頁碼控制
+                                </h3>
+                                <button id="btn-clear-all" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors hidden">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除全部
+                                </button>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-center">
+                                <div class="p-4 bg-slate-950 rounded-full mb-4 text-slate-600">
+                                    <i data-lucide="file-text" class="w-12 h-12"></i>
+                                </div>
+                                <h4 class="text-slate-300 font-medium mb-1">尚未上傳任何 PDF</h4>
+                                <p class="text-slate-500 text-xs max-w-sm">請於左側拖曳或選擇 PDF 檔案。檔案載入後，您可以在此自由調整合併的先後順序！</p>
+                            </div>
+
+                            <!-- File Items Container -->
+                            <div id="file-list" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Usage tips -->
+                        <div id="instructions" class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-500 hidden">
+                            <p class="flex items-start gap-1.5">
+                                <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+                                <span><strong>頁碼規則說明：</strong>留空代表合併「整份檔案」。若想自訂合併特定頁面，請輸入對應頁碼（如: <code>1</code> 或是範圍 <code>1-3</code>，並用逗號分隔，例如 <code>1-3, 5</code>）。頁碼必須小於該檔案的最大頁數。</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: COMPRESS SECTION ==================== -->
+        <div id="compress-section" class="space-y-6 hidden">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3">
+                    無損/極限 雙模式 PDF 批量壓縮
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    如果您上傳的是「掃描版」或「大圖 PDF」，強烈建議開啟 **「極限影像壓縮」** 以取得極致的縮減效果！
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Side: Dropzone & Settings -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dropzone Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2 text-purple-400"></i>
+                            上傳欲壓縮檔案
+                        </h3>
+                        <div id="compress-dropzone" class="border-2 border-dashed border-slate-700 hover:border-purple-500 bg-slate-950/50 hover:bg-slate-900/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300">
+                            <input type="file" id="compress-file-input" class="hidden" accept="application/pdf" multiple>
+                            <div class="p-4 bg-slate-850 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="file-down" class="w-8 h-8 text-slate-400 group-hover:text-purple-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-200 text-sm mb-1">拖曳多個 PDF 檔案至此</p>
+                            <p class="text-xs text-slate-500 mb-4">或點擊本區塊選擇檔案</p>
+                            <span class="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-400 border border-slate-700/50">支援批量多選上傳</span>
+                        </div>
+                    </div>
+
+                    <!-- Compression Settings -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="sliders" class="w-5 h-5 mr-2 text-purple-400"></i>
+                            壓縮引擎與強度
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- Compression Engine Tab Selector -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-2">選擇壓縮引擎</label>
+                                <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                                    <button id="engine-vector-btn" onclick="setCompressEngine('vector')" type="button" class="py-2 text-xs font-semibold rounded-lg text-white bg-purple-600 shadow-sm transition-all">
+                                        無損文字保留
+                                    </button>
+                                    <button id="engine-raster-btn" onclick="setCompressEngine('raster')" type="button" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all flex items-center justify-center gap-1">
+                                        影像極限壓縮
+                                        <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Vector Options (Conditional UI) -->
+                            <div id="vector-options-box" class="space-y-2">
+                                <p class="text-[11px] text-slate-500 mb-2">重構 PDF 底層字典，不破壞任何文字與解析度：</p>
+                                <label class="flex items-start p-3 bg-slate-950 hover:bg-slate-900/50 rounded-xl border border-slate-800 cursor-pointer transition-colors">
+                                    <input type="radio" name="compression-level" value="low" onchange="onCompressionLevelChange()" class="mt-1 text-purple-500 focus:ring-purple-500 bg-slate-950 border-slate-700">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-slate-200 block">輕度優化 (約節省 15%)</span>
+                                        <span class="text-xs text-slate-500">剔除重複物件，保留書籤。</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-start p-3 bg-slate-950 hover:bg-slate-900/50 rounded-xl border border-purple-500/30 cursor-pointer transition-colors">
+                                    <input type="radio" name="compression-level" value="medium" checked onchange="onCompressionLevelChange()" class="mt-1 text-purple-500 focus:ring-purple-500 bg-slate-950 border-slate-700">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-purple-300 block">中度優化 (約節省 30%)</span>
+                                        <span class="text-xs text-slate-500">剔除編輯歷史與元數據（推薦）。</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 bg-slate-950 hover:bg-slate-900/50 rounded-xl border border-slate-800/50 cursor-pointer transition-colors">
+                                    <input type="radio" name="compression-level" value="high" onchange="onCompressionLevelChange()" class="mt-1 text-purple-500 focus:ring-purple-500 bg-slate-950 border-slate-700">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-slate-200 block">重度壓縮 (約節省 45%)</span>
+                                        <span class="text-xs text-slate-500">展平並以最高效率串流化打包。</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Raster Options (Conditional UI) -->
+                            <div id="raster-options-box" class="space-y-3 hidden">
+                                <p class="text-[11px] text-purple-400 mb-2">
+                                    透過高精度影像重編碼（適合掃描件、圖片 PDF）：
+                                </p>
+                                <!-- DPI presets -->
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 font-medium">解析度 (DPI縮放)</label>
+                                    <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-850">
+                                        <button onclick="setRasterPreset('scale', 1.0, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-slate-900 text-slate-300">
+                                            72 DPI (超小)
+                                        </button>
+                                        <button onclick="setRasterPreset('scale', 1.3, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-purple-600 text-white font-bold">
+                                            120 DPI (標準)
+                                        </button>
+                                        <button onclick="setRasterPreset('scale', 1.8, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-slate-900 text-slate-300">
+                                            150 DPI (高清)
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Quality presets -->
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 font-medium">影像壓縮比 (Quality)</label>
+                                    <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-850">
+                                        <button onclick="setRasterPreset('quality', 0.45, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-slate-900 text-slate-300">
+                                            45% (極扁)
+                                        </button>
+                                        <button onclick="setRasterPreset('quality', 0.65, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-purple-600 text-white font-bold">
+                                            65% (平衡)
+                                        </button>
+                                        <button onclick="setRasterPreset('quality', 0.85, this)" type="button" class="py-1 text-[11px] font-semibold rounded bg-slate-900 text-slate-300">
+                                            85% (精緻)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Summary Estimator Panel -->
+                            <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs text-slate-400 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>檔案數量:</span>
+                                    <span id="compress-summary-count" class="font-bold text-white">0 個</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>總原始容量:</span>
+                                    <span id="compress-summary-orig" class="font-bold text-white">0 KB</span>
+                                </div>
+                                <div class="flex justify-between border-t border-slate-850 pt-2 text-purple-400 font-medium">
+                                    <span>預計壓縮後總容量:</span>
+                                    <span id="compress-summary-est" class="font-bold">~0 KB</span>
+                                </div>
+                            </div>
+
+                            <button id="btn-compress-start" disabled onclick="processAllCompressions()"
+                                class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                <span>啟動批量壓縮</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Active Files List & Live Report -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                                <h3 class="text-lg font-semibold text-white flex items-center">
+                                    <i data-lucide="list" class="w-5 h-5 mr-2 text-purple-400"></i>
+                                    待壓縮清單與進度管理
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <button id="btn-compress-download-all" onclick="downloadAllCompressed()" class="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> 打包下載所有成功件
+                                    </button>
+                                    <button id="btn-compress-clear" onclick="clearCompressList()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除清單
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Empty State Compress -->
+                            <div id="compress-empty-state" class="flex flex-col items-center justify-center py-24 text-center">
+                                <div class="p-4 bg-slate-950 rounded-full mb-4 text-slate-600">
+                                    <i data-lucide="file-down" class="w-12 h-12"></i>
+                                </div>
+                                <h4 class="text-slate-300 font-medium mb-1">等待批量上傳 PDF 檔案</h4>
+                                <p class="text-slate-500 text-xs max-w-sm">
+                                    支援多選拖曳，可選用影像極限壓縮，並立即預覽所有檔案的預計壓縮值。
+                                </p>
+                            </div>
+
+                            <!-- Batch File Items Container -->
+                            <div id="compress-file-list" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Info note -->
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-500 flex items-start gap-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-purple-400 shrink-0"></i>
+                            <span>
+                                <strong>雙模式選用指南：</strong>如果壓縮完大小沒變，代表這是一份已被高度最佳化的掃描檔。此時請切換至 <strong>「影像極限壓縮」</strong>，它會深度壓縮內部圖層，並大幅降低 PDF 大小。
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: PDF TO PHOTO SECTION ==================== -->
+        <div id="photo-section" class="space-y-6 hidden">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3">
+                    PDF 免費無損轉圖片
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    將 PDF 的每一頁快速轉換成清晰的高品質 PNG 或 JPEG 圖片，支援預覽、單張下載與一鍵批量導出。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Settings -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dropzone for Photos -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                            上傳欲轉換的 PDF
+                        </h3>
+                        <div id="photo-dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-950/50 hover:bg-slate-900/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300">
+                            <input type="file" id="photo-file-input" class="hidden" accept="application/pdf">
+                            <div class="p-4 bg-slate-850 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="file-image" class="w-8 h-8 text-slate-400 group-hover:text-emerald-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-200 text-sm mb-1">拖曳單個 PDF 至此</p>
+                            <p class="text-xs text-slate-500 mb-4">或點擊本區塊選擇檔案</p>
+                            <span class="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-400 border border-slate-700/50">本地端超清渲染</span>
+                        </div>
+                    </div>
+
+                    <!-- Rendering Setup -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="settings-2" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                            輸出圖片格式與精度
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- Image Format Selection -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-2">圖片格式</label>
+                                <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                                    <button id="photo-format-png-btn" onclick="setPhotoFormat('image/png')" type="button" class="py-2 text-xs font-semibold rounded-lg text-white bg-emerald-600 shadow-sm transition-all">
+                                        PNG (無損透明)
+                                    </button>
+                                    <button id="photo-format-jpg-btn" onclick="setPhotoFormat('image/jpeg')" type="button" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all">
+                                        JPEG (高壓縮率)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Resolution Selection -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-2">輸出精細度 (DPI 解析度)</label>
+                                <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-850">
+                                    <button id="photo-dpi-72" onclick="setPhotoDpi(1.0, 'photo-dpi-72')" type="button" class="py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all">
+                                        72 DPI (小檔)
+                                    </button>
+                                    <button id="photo-dpi-150" onclick="setPhotoDpi(1.8, 'photo-dpi-150')" type="button" class="py-1.5 text-xs rounded bg-emerald-600 text-white font-bold transition-all">
+                                        150 DPI (標準)
+                                    </button>
+                                    <button id="photo-dpi-300" onclick="setPhotoDpi(3.0, 'photo-dpi-300')" type="button" class="py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all">
+                                        300 DPI (超清)
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-2">提示：300 DPI 渲染精細但需要較多記憶體與處理時間。</p>
+                            </div>
+
+                            <!-- Action button -->
+                            <button id="btn-photo-start" disabled onclick="convertPdfToPhotos()"
+                                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                <i data-lucide="play-circle" class="w-5 h-5"></i>
+                                <span>開始轉換為圖片</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results Display & Photo Grid -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                                <h3 class="text-lg font-semibold text-white flex items-center">
+                                    <i data-lucide="image-play" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                                    圖片轉存結果區
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <button id="btn-photo-download-all" onclick="downloadAllPhotos()" class="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> 批量下載所有圖片
+                                    </button>
+                                    <button id="btn-photo-clear" onclick="clearPhotoData()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除重新上傳
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Empty state photo -->
+                            <div id="photo-empty-state" class="flex flex-col items-center justify-center py-24 text-center">
+                                <div class="p-4 bg-slate-950 rounded-full mb-4 text-slate-600">
+                                    <i data-lucide="file-image" class="w-12 h-12"></i>
+                                </div>
+                                <h4 class="text-slate-300 font-medium mb-1">尚未解析任何 PDF 檔案</h4>
+                                <p class="text-slate-500 text-xs max-w-sm">
+                                    請在上傳區載入 PDF。轉換完成後，每一頁都會產生獨立圖片供您放大預覽與下載。
+                                </p>
+                            </div>
+
+                            <!-- PDF File Meta Info Panel (visible when loaded) -->
+                            <div id="photo-file-meta-card" class="hidden mb-6 bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h4 id="photo-meta-name" class="text-sm font-medium text-white truncate max-w-[280px]">document.pdf</h4>
+                                        <p id="photo-meta-info" class="text-xs text-slate-500 mt-0.5">檔案大小: 0 KB • 頁數: 0 頁</p>
+                                    </div>
+                                </div>
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md border border-emerald-500/20">已載入</span>
+                            </div>
+
+                            <!-- Converted Images Grid -->
+                            <div id="photo-grid-container" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <!-- Cards dynamically created in javascript -->
+                            </div>
+                        </div>
+
+                        <!-- Usage tip -->
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-500 flex items-start gap-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>
+                                <strong>高倍率渲染提示：</strong>使用 300 DPI (超清) 處理頁數繁多的文件時，將會佔用較多的瀏覽器分頁記憶體，若發生停滯，建議降低至 150 DPI。
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: PDF TO PPTX SECTION ==================== -->
+        <div id="pptx-section" class="space-y-6 hidden">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3 text-orange-400">
+                    PDF 轉 PowerPoint 簡報
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    一鍵將 PDF 各頁完整轉換為 PPTX 簡報投影片。採用高精版面鎖定技術，徹底消除字型與版面跑版困擾！
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Settings -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dropzone for PPTX -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-orange-500/5 to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2 text-orange-400"></i>
+                            上傳欲轉換的 PDF
+                        </h3>
+                        <div id="pptx-dropzone" class="border-2 border-dashed border-slate-700 hover:border-orange-500 bg-slate-950/50 hover:bg-slate-900/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300">
+                            <input type="file" id="pptx-file-input" class="hidden" accept="application/pdf">
+                            <div class="p-4 bg-slate-850 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="presentation" class="w-8 h-8 text-slate-400 group-hover:text-orange-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-200 text-sm mb-1">拖曳單個 PDF 至此</p>
+                            <p class="text-xs text-slate-500 mb-4">或點擊本區塊選擇檔案</p>
+                            <span class="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-400 border border-slate-700/50">本地端精密投影片構建</span>
+                        </div>
+                    </div>
+
+                    <!-- Rendering Setup -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="sliders" class="w-5 h-5 mr-2 text-orange-400"></i>
+                            簡報版面與清晰度
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- Slide Dimension layout selection -->
+                            <div>
+                                <label for="pptx-layout-mode" class="block text-xs font-medium text-slate-400 mb-2">投影片尺寸與比例</label>
+                                <select id="pptx-layout-mode" class="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none transition-all">
+                                    <option value="auto" selected>自動適應 (與原 PDF A4/Letter 完美相同比例)</option>
+                                    <option value="169">寬螢幕 16:9 (適合投影機與現代寬螢幕)</option>
+                                    <option value="43">標準螢幕 4:3 (傳統投影片比例)</option>
+                                </select>
+                            </div>
+
+                            <!-- Resolution Selection (DPI) -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-2">投影片清晰度 (DPI 規格)</label>
+                                <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-850">
+                                    <button id="pptx-dpi-72" onclick="setPptxDpi(1.0, 'pptx-dpi-72')" type="button" class="py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all">
+                                        72 DPI (流暢)
+                                    </button>
+                                    <button id="pptx-dpi-150" onclick="setPptxDpi(1.5, 'pptx-dpi-150')" type="button" class="py-1.5 text-xs rounded bg-orange-600 text-white font-bold transition-all">
+                                        110 DPI (標準)
+                                    </button>
+                                    <button id="pptx-dpi-300" onclick="setPptxDpi(2.2, 'pptx-dpi-300')" type="button" class="py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all">
+                                        150 DPI (超清)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- PPTX Filename -->
+                            <div>
+                                <label for="pptx-output-filename" class="block text-xs font-medium text-slate-400 mb-2">輸出簡報名稱</label>
+                                <div class="relative">
+                                    <input type="text" id="pptx-output-filename" value="converted_presentation" 
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-slate-100 rounded-xl py-2.5 pl-3 pr-16 text-sm outline-none transition-all">
+                                    <span class="absolute right-3 top-2.5 text-sm text-slate-500 font-semibold pointer-events-none">.pptx</span>
+                                </div>
+                            </div>
+
+                            <!-- Action button -->
+                            <button id="btn-pptx-start" disabled onclick="convertPdfToPptx()"
+                                class="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                <i data-lucide="play-circle" class="w-5 h-5"></i>
+                                <span>開始轉換為 PPTX</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results Display & Photo Grid -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                                <h3 class="text-lg font-semibold text-white flex items-center">
+                                    <i data-lucide="image-play" class="w-5 h-5 mr-2 text-orange-400"></i>
+                                    投影片構建與進度區
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <button id="btn-pptx-clear" onclick="clearPptxData()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除重新上傳
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Empty state pptx -->
+                            <div id="pptx-empty-state" class="flex flex-col items-center justify-center py-24 text-center">
+                                <div class="p-4 bg-slate-950 rounded-full mb-4 text-slate-600">
+                                    <i data-lucide="presentation" class="w-12 h-12"></i>
+                                </div>
+                                <h4 class="text-slate-300 font-medium mb-1">尚未解析任何 PDF 簡報</h4>
+                                <p class="text-slate-500 text-xs max-w-sm">
+                                    請在上傳區載入簡報 PDF。轉換過程中，系統會將每一頁轉化為獨立投影片，免去排版跑位困擾。
+                                </p>
+                            </div>
+
+                            <!-- PDF File Meta Info Panel (visible when loaded) -->
+                            <div id="pptx-file-meta-card" class="hidden mb-6 bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="p-2.5 bg-orange-500/10 text-orange-400 rounded-lg">
+                                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h4 id="pptx-meta-name" class="text-sm font-medium text-white truncate max-w-[280px]">slides.pdf</h4>
+                                        <p id="pptx-meta-info" class="text-xs text-slate-500 mt-0.5">檔案大小: 0 KB • 頁數: 0 頁</p>
+                                    </div>
+                                </div>
+                                <span class="bg-orange-500/10 text-orange-400 text-xs font-semibold px-2.5 py-1 rounded-md border border-orange-500/20">已載入</span>
+                            </div>
+
+                            <!-- Converted Images Grid -->
+                            <div id="pptx-grid-container" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <!-- Cards dynamically created in javascript -->
+                            </div>
+                        </div>
+
+                        <!-- Usage tip -->
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-500 flex items-start gap-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-orange-400 shrink-0"></i>
+                            <span>
+                                <strong>轉 PowerPoint 簡報技術：</strong>此方法可以將合約、圖片、各類圖文 PDF 100% 還原，文字雖是以高清背景或背景圖片的形式嵌入，但這能完美鎖定您投影片中所有的特殊字體、背景與自訂圖表。
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 5: PHOTO TO PDF SECTION ==================== -->
+        <div id="topdf-section" class="space-y-6 hidden">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3 text-emerald-400">
+                    圖片批量轉 PDF 檔案
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    將多張圖片（JPG、PNG、WebP）快速組合並儲存為單個標準 PDF 文件，支援拖曳調整排序、自訂 A4 紙張與邊距。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Settings -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dropzone for Photos to PDF -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                            上傳圖片
+                        </h3>
+                        <div id="topdf-dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-950/50 hover:bg-slate-900/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300">
+                            <input type="file" id="topdf-file-input" class="hidden" accept="image/*" multiple>
+                            <div class="p-4 bg-slate-850 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="images" class="w-8 h-8 text-slate-400 group-hover:text-emerald-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-200 text-sm mb-1">拖曳多張圖片至此</p>
+                            <p class="text-xs text-slate-500 mb-4">或點擊本區塊選擇檔案</p>
+                            <span class="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-400 border border-slate-700/50">支援 JPG, PNG, WebP</span>
+                        </div>
+                    </div>
+
+                    <!-- PDF Generation Setup -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                            <i data-lucide="sliders" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                            版面與頁面設定
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- Page Size selection -->
+                            <div>
+                                <label for="topdf-page-size" class="block text-xs font-medium text-slate-400 mb-2">紙張尺寸</label>
+                                <select id="topdf-page-size" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none transition-all">
+                                    <option value="auto" selected>自動適應 (與圖片實際比例完全一致)</option>
+                                    <option value="a4">A4 紙張規格 (595 x 842 pt)</option>
+                                    <option value="letter">Letter 紙張規格 (612 x 792 pt)</option>
+                                </select>
+                            </div>
+
+                            <!-- Page Orientation selection -->
+                            <div>
+                                <label for="topdf-orientation" class="block text-xs font-medium text-slate-400 mb-2">紙張方向</label>
+                                <select id="topdf-orientation" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none transition-all">
+                                    <option value="auto" selected>自動偵測 (依圖片長寬比決定)</option>
+                                    <option value="portrait">縱向 (Portrait)</option>
+                                    <option value="landscape">橫向 (Landscape)</option>
+                                </select>
+                            </div>
+
+                            <!-- Margins setup -->
+                            <div>
+                                <label for="topdf-margin" class="block text-xs font-medium text-slate-400 mb-2">頁邊距 (Margin)</label>
+                                <select id="topdf-margin" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none transition-all">
+                                    <option value="0" selected>無邊距 (0 pt) - 圖片填滿整頁</option>
+                                    <option value="15">窄邊距 (15 pt)</option>
+                                    <option value="30">寬邊距 (30 pt)</option>
+                                </select>
+                            </div>
+
+                            <!-- PPTX Filename -->
+                            <div>
+                                <label for="topdf-output-filename" class="block text-xs font-medium text-slate-400 mb-2">輸出 PDF 檔名</label>
+                                <div class="relative">
+                                    <input type="text" id="topdf-output-filename" value="images_combined" 
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-100 rounded-xl py-2.5 pl-3 pr-16 text-sm outline-none transition-all">
+                                    <span class="absolute right-3 top-2.5 text-sm text-slate-500 font-semibold pointer-events-none">.pdf</span>
+                                </div>
+                            </div>
+
+                            <!-- Action button -->
+                            <button id="btn-topdf-start" disabled onclick="generatePdfFromPhotos()"
+                                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+                                <span>產生並儲存 PDF</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Sorting & Previews Grid -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                                <h3 class="text-lg font-semibold text-white flex items-center">
+                                    <i data-lucide="list-ordered" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                                    調整圖片排序 (每張圖代表一頁)
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <button id="btn-topdf-clear" onclick="clearToPdfData()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors hidden">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除全部
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Empty state topdf -->
+                            <div id="topdf-empty-state" class="flex flex-col items-center justify-center py-24 text-center">
+                                <div class="p-4 bg-slate-950 rounded-full mb-4 text-slate-600">
+                                    <i data-lucide="images" class="w-12 h-12"></i>
+                                </div>
+                                <h4 class="text-slate-300 font-medium mb-1">尚未上傳任何圖片</h4>
+                                <p class="text-slate-500 text-xs max-w-sm">
+                                    請於左側拖曳或選擇多張圖片。載入後，您可以在這裡任意調整它們在 PDF 中的頁面順序。
+                                </p>
+                            </div>
+
+                            <!-- Image Sortable List Container -->
+                            <div id="topdf-list-container" class="hidden space-y-3">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Usage tip -->
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-500 flex items-start gap-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>
+                                <strong>高相容度本地渲染：</strong>圖片轉 PDF 功能完全在您的設備瀏覽器本地端進行，所有非標準格式圖片會在導出時自動安全重組為高效的 JPG 點陣圖並寫入 PDF 核心，轉換後排版整齊、解析度極高。
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Save Location Guide Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl mx-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="folder-cog" class="w-5 h-5 text-indigo-400"></i>
+                    如何自由選擇「儲存資料夾」路徑？
+                </h3>
+                <button onclick="toggleHelpModal(false)" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 space-y-4 leading-relaxed">
+                <p>為了防範病毒惡意修改電腦，瀏覽器在安全限制下，禁止網頁在不詢問的情況下直接指定硬碟絕對路徑。本系統已為您做出最佳優化：</p>
+                
+                <div class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                    <h4 class="font-semibold text-indigo-300 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                        方法一：使用本機另存對話框（系統已內建）
+                    </h4>
+                    <p class="text-xs text-slate-400 pl-3">
+                        我們已內置 <strong>File System Access</strong> 技術。當您使用 Chrome / Edge 瀏覽器點擊下載時，系統會<strong>直接彈出「另存新檔」視窗</strong>，您可以自由選擇任何硬碟位置 (例如：桌面、D槽、隨身碟)，並能在儲存前即時修改名稱。
+                    </p>
+                </div>
+
+                <div class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                    <h4 class="font-semibold text-emerald-300 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        方法二：啟用瀏覽器「下載前詢問」設定
+                    </h4>
+                    <p class="text-xs text-slate-400 pl-3">
+                        若您使用的是 Safari 或 Firefox，強烈建議您花費 10 秒鐘開啟瀏覽器的安全詢問：
+                    </p>
+                    <ul class="list-disc pl-7 text-xs text-slate-400 space-y-1.5">
+                        <li><strong>Chrome / Edge：</strong>設定 ➔ 下載 ➔ 啟用「下載每個檔案前先詢問儲存位置」</li>
+                        <li><strong>Safari：</strong>偏好設定 ➔ 一般 ➔ 下載項目儲存位置 ➔ 設為「每次下載時詢問」</li>
+                        <li><strong>Firefox：</strong>設定 ➔ 一般 ➔ 下載 ➔ 勾選「每次都問您要將檔案儲存至何處」</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button onclick="toggleHelpModal(false)" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
+                我知道了，開始處理 PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950/80 py-6 mt-12 text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 PDF 萬能工具箱 Pro. 本網頁軟體完全採用 HTML5/JS 本地沙盒計算，無伺服器上傳，檔案零外流風險。</p>
+            <div class="flex space-x-4">
+                <span class="hover:text-slate-300 transition-colors">完全免安裝</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 transition-colors">極限壓縮演算法</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Processing Overlay / Loader Modal -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-xs w-full text-center shadow-2xl">
+            <!-- Spinner -->
+            <div class="relative w-16 h-16 mx-auto mb-4">
+                <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+            </div>
+            <h4 class="text-white font-semibold text-lg mb-2">正在處理中...</h4>
+            <p id="loader-text" class="text-xs text-slate-400">正在分析頁面結構，請稍候。</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+
+    <script>
+        // PDF.js worker integration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Help Modal Toggle
+        function toggleHelpModal(show) {
+            const modal = document.getElementById('help-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Tab switching logic
+        function switchTab(tab) {
+            const tabMergeBtn = document.getElementById('tab-merge-btn');
+            const tabCompressBtn = document.getElementById('tab-compress-btn');
+            const tabPhotoBtn = document.getElementById('tab-photo-btn');
+            const tabPptxBtn = document.getElementById('tab-pptx-btn');
+            const tabToPdfBtn = document.getElementById('tab-topdf-btn');
+            
+            const mergeSection = document.getElementById('merge-section');
+            const compressSection = document.getElementById('compress-section');
+            const photoSection = document.getElementById('photo-section');
+            const pptxSection = document.getElementById('pptx-section');
+            const toPdfSection = document.getElementById('topdf-section');
+
+            // Default button classes base
+            const activeBase = "flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-white shadow-lg";
+            const inactiveBase = "flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-400 hover:text-slate-100 flex items-center justify-center gap-1.5";
+
+            if (tab === 'merge') {
+                tabMergeBtn.className = `${activeBase} bg-indigo-600/90 shadow-indigo-500/10 flex items-center justify-center gap-1.5`;
+                tabCompressBtn.className = inactiveBase;
+                tabPhotoBtn.className = inactiveBase;
+                tabPptxBtn.className = inactiveBase;
+                tabToPdfBtn.className = inactiveBase;
+                
+                mergeSection.classList.remove('hidden');
+                compressSection.classList.add('hidden');
+                photoSection.classList.add('hidden');
+                pptxSection.classList.add('hidden');
+                toPdfSection.classList.add('hidden');
+            } else if (tab === 'compress') {
+                tabCompressBtn.className = `${activeBase} bg-purple-600/90 shadow-purple-500/10 flex items-center justify-center gap-1.5`;
+                tabMergeBtn.className = inactiveBase;
+                tabPhotoBtn.className = inactiveBase;
+                tabPptxBtn.className = inactiveBase;
+                tabToPdfBtn.className = inactiveBase;
+                
+                compressSection.classList.remove('hidden');
+                mergeSection.classList.add('hidden');
+                photoSection.classList.add('hidden');
+                pptxSection.classList.add('hidden');
+                toPdfSection.classList.add('hidden');
+            } else if (tab === 'photo') {
+                tabPhotoBtn.className = `${activeBase} bg-emerald-600/90 shadow-emerald-500/10 flex items-center justify-center gap-1.5`;
+                tabMergeBtn.className = inactiveBase;
+                tabCompressBtn.className = inactiveBase;
+                tabPptxBtn.className = inactiveBase;
+                tabToPdfBtn.className = inactiveBase;
+
+                photoSection.classList.remove('hidden');
+                mergeSection.classList.add('hidden');
+                compressSection.classList.add('hidden');
+                pptxSection.classList.add('hidden');
+                toPdfSection.classList.add('hidden');
+            } else if (tab === 'pptx') {
+                tabPptxBtn.className = `${activeBase} bg-orange-600/90 shadow-orange-500/10 flex items-center justify-center gap-1.5`;
+                tabMergeBtn.className = inactiveBase;
+                tabCompressBtn.className = inactiveBase;
+                tabPhotoBtn.className = inactiveBase;
+                tabToPdfBtn.className = inactiveBase;
+
+                pptxSection.classList.remove('hidden');
+                mergeSection.classList.add('hidden');
+                compressSection.classList.add('hidden');
+                photoSection.classList.add('hidden');
+                toPdfSection.classList.add('hidden');
+            } else {
+                tabToPdfBtn.className = `${activeBase} bg-teal-600/90 shadow-teal-500/10 flex items-center justify-center gap-1.5`;
+                tabMergeBtn.className = inactiveBase;
+                tabCompressBtn.className = inactiveBase;
+                tabPhotoBtn.className = inactiveBase;
+                tabPptxBtn.className = inactiveBase;
+
+                toPdfSection.classList.remove('hidden');
+                mergeSection.classList.add('hidden');
+                compressSection.classList.add('hidden');
+                photoSection.classList.add('hidden');
+                pptxSection.classList.add('hidden');
+            }
+        }
+
+        // ==================== STATE MANAGEMENT ====================
+        let filesData = [];             // For Merge
+        let compressFilesData = [];     // For Batch Compress
+        
+        // Dynamic compress state
+        let currentCompressEngine = 'vector';
+        let rasterScale = 1.3;
+        let rasterQuality = 0.65;
+
+        // Dynamic PDF-To-Photo State
+        let photoFileState = null;      // { name, sizeText, sizeRaw, pageCount, buffer }
+        let photoOutputFormat = 'image/png'; // 'image/png' | 'image/jpeg'
+        let photoOutputScale = 1.8;     // 1.0 (72DPI), 1.8 (150DPI), 3.0 (300DPI)
+        let convertedPhotos = [];       // [{ pageNum, dataUrl }]
+
+        // Dynamic PDF-To-PPTX State
+        let pptxFileState = null;       // { name, sizeText, sizeRaw, pageCount, buffer }
+        let pptxOutputScale = 1.5;      // 1.0 (72DPI), 1.5 (110DPI), 2.2 (150DPI)
+        let convertedPptxPages = [];    // [{ pageNum, dataUrl }]
+
+        // Dynamic Photo-To-PDF State
+        let photoToPdfData = [];        // [{ id, file, name, sizeText, width, height, dataUrl, buffer }]
+
+        // DOM elements cache (Merge)
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileListContainer = document.getElementById('file-list');
+        const emptyState = document.getElementById('empty-state');
+        const instructions = document.getElementById('instructions');
+        const btnClearAll = document.getElementById('btn-clear-all');
+        const btnMerge = document.getElementById('btn-merge');
+        const outputFilenameInput = document.getElementById('output-filename');
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const loaderText = document.getElementById('loader-text');
+        const summaryCount = document.getElementById('summary-count');
+        const summaryPages = document.getElementById('summary-pages');
+
+        // DOM elements cache (Compress)
+        const compressDropzone = document.getElementById('compress-dropzone');
+        const compressFileInput = document.getElementById('compress-file-input');
+        const compressEmptyState = document.getElementById('compress-empty-state');
+        const compressFileListContainer = document.getElementById('compress-file-list');
+        const btnCompressClear = document.getElementById('btn-compress-clear');
+        const btnCompressDownloadAll = document.getElementById('btn-compress-download-all');
+        const btnCompressStart = document.getElementById('btn-compress-start');
+        
+        const compressSummaryCount = document.getElementById('compress-summary-count');
+        const compressSummaryOrig = document.getElementById('compress-summary-orig');
+        const compressSummaryEst = document.getElementById('compress-summary-est');
+
+        const vectorOptionsBox = document.getElementById('vector-options-box');
+        const rasterOptionsBox = document.getElementById('raster-options-box');
+
+        // DOM elements cache (Photo to PDF)
+        const photoDropzone = document.getElementById('photo-dropzone');
+        const photoFileInput = document.getElementById('photo-file-input');
+        const photoEmptyState = document.getElementById('photo-empty-state');
+        const photoFileMetaCard = document.getElementById('photo-file-meta-card');
+        const photoMetaName = document.getElementById('photo-meta-name');
+        const photoMetaInfo = document.getElementById('photo-meta-info');
+        const photoGridContainer = document.getElementById('photo-grid-container');
+        const btnPhotoStart = document.getElementById('btn-photo-start');
+        const btnPhotoDownloadAll = document.getElementById('btn-photo-download-all');
+        const btnPhotoClear = document.getElementById('btn-photo-clear');
+
+        // DOM elements cache (PDF to PPTX)
+        const pptxDropzone = document.getElementById('pptx-dropzone');
+        const pptxFileInput = document.getElementById('pptx-file-input');
+        const pptxEmptyState = document.getElementById('pptx-empty-state');
+        const pptxFileMetaCard = document.getElementById('pptx-file-meta-card');
+        const pptxMetaName = document.getElementById('pptx-meta-name');
+        const pptxMetaInfo = document.getElementById('pptx-meta-info');
+        const pptxGridContainer = document.getElementById('pptx-grid-container');
+        const btnPptxStart = document.getElementById('btn-pptx-start');
+        const btnPptxClear = document.getElementById('btn-pptx-clear');
+
+        // DOM elements cache (Photo to PDF conversion)
+        const topdfDropzone = document.getElementById('topdf-dropzone');
+        const topdfFileInput = document.getElementById('topdf-file-input');
+        const topdfEmptyState = document.getElementById('topdf-empty-state');
+        const topdfListContainer = document.getElementById('topdf-list-container');
+        const btnToPdfStart = document.getElementById('btn-topdf-start');
+        const btnToPdfClear = document.getElementById('btn-topdf-clear');
+
+        // Base ratio values
+        const VECTOR_RATIOS = {
+            low: 0.85,
+            medium: 0.68,
+            high: 0.52
+        };
+
+        // Initialize Lucide icons
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+        // Toast alert system
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-slate-900 border-slate-800 text-slate-200';
+            let icon = 'info';
+            let iconColor = 'text-indigo-400';
+
+            if (type === 'success') {
+                bgColor = 'bg-slate-900 border-emerald-800 text-slate-200';
+                icon = 'check-circle';
+                iconColor = 'text-emerald-400';
+            } else if (type === 'error') {
+                bgColor = 'bg-slate-900 border-rose-900/50 text-slate-200';
+                icon = 'alert-triangle';
+                iconColor = 'text-rose-400';
+            }
+
+            toast.className = `flex items-center gap-3 p-4 rounded-xl border ${bgColor} shadow-2xl transform translate-y-4 opacity-0 transition-all duration-300`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 ${iconColor} shrink-0"></i>
+                <div class="text-sm font-medium flex-1">${message}</div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons({attrs: {class: 'w-5 h-5'}});
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        // Loader helper
+        function showLoader(message, isVisible) {
+            if (isVisible) {
+                loaderText.textContent = message;
+                loaderOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                loaderOverlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        // Helper: Format byte sizes elegantly
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 KB';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            if (i === 0) return bytes + ' ' + sizes[i];
+            return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+        }
+
+        // Universal Custom Save Location / Standard Download Engine
+        async function triggerDownload(blob, defaultFilename) {
+            // Check if modern browser File System Access API is supported
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const fileExtension = defaultFilename.substring(defaultFilename.lastIndexOf('.'));
+                    const mimeType = blob.type;
+
+                    const options = {
+                        suggestedName: defaultFilename,
+                        types: [{
+                            description: mimeType.includes('pdf') ? 'PDF 文件 (*.pdf)' : (mimeType.includes('presentation') ? 'PowerPoint 簡報 (*.pptx)' : '影像圖片 (*.png, *.jpg)'),
+                            accept: {
+                                [mimeType]: [fileExtension]
+                            }
+                        }]
+                    };
+
+                    const handle = await window.showSaveFilePicker(options);
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    showToast("檔案已成功儲存至您選擇的路徑！", "success");
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        showToast("儲存程序已取消", "info");
+                        return;
+                    }
+                    console.warn("File System Access API 寫入發生異常，改用標準瀏覽器通道下載：", err);
+                }
+            }
+            
+            // Standard Anchor Fallback Channel
+            const url = URL.createObjectURL(blob);
+            const tempAnchor = document.createElement('a');
+            tempAnchor.href = url;
+            tempAnchor.download = defaultFilename;
+            document.body.appendChild(tempAnchor);
+            tempAnchor.click();
+            document.body.removeChild(tempAnchor);
+            
+            setTimeout(() => URL.revokeObjectURL(url), 150);
+            showToast("已成功觸發檔案下載！", "success");
+        }
+
+        // ==================== MERGE SCRIPT LOGIC ====================
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelection);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('border-indigo-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('border-indigo-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            handleFiles(dt.files);
+        });
+
+        function handleFileSelection(e) {
+            handleFiles(e.target.files);
+            fileInput.value = '';
+        }
+
+        async function handleFiles(files) {
+            const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+            if (pdfFiles.length === 0 && files.length > 0) {
+                showToast("所選檔案不包含任何 PDF 檔案！", "error");
+                return;
+            }
+            if (pdfFiles.length < files.length) {
+                showToast("已自動過濾非 PDF 格式的檔案。", "info");
+            }
+
+            showLoader("正在解析上傳檔案的內部結構...", true);
+
+            for (const file of pdfFiles) {
+                try {
+                    const buffer = await file.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+                    const pageCount = pdfDoc.getPageCount();
+
+                    const sizeInKB = (file.size / 1024).toFixed(1);
+                    const sizeText = sizeInKB > 1000 ? (sizeInKB / 1024).toFixed(1) + ' MB' : sizeInKB + ' KB';
+
+                    filesData.push({
+                        id: crypto.randomUUID(),
+                        file: file,
+                        name: file.name,
+                        sizeText: sizeText,
+                        pageCount: pageCount,
+                        rangeText: '',
+                        buffer: buffer
+                    });
+                } catch (error) {
+                    console.error(error);
+                    showToast(`無法讀取 "${file.name}"，可能檔案已受損、加密或受密碼保護。`, "error");
+                }
+            }
+
+            showLoader("", false);
+            updateUI();
+            showToast(`成功載入 ${pdfFiles.length} 個 PDF 檔案`, "success");
+        }
+
+        function moveUp(index) {
+            if (index === 0) return;
+            const temp = filesData[index];
+            filesData[index] = filesData[index - 1];
+            filesData[index - 1] = temp;
+            updateUI();
+        }
+
+        function moveDown(index) {
+            if (index === filesData.length - 1) return;
+            const temp = filesData[index];
+            filesData[index] = filesData[index + 1];
+            filesData[index + 1] = temp;
+            updateUI();
+        }
+
+        function deleteFile(index) {
+            filesData.splice(index, 1);
+            updateUI();
+            showToast("已移除選取檔案", "info");
+        }
+
+        function updateRangeText(index, value) {
+            filesData[index].rangeText = value;
+            calculateSummary();
+        }
+
+        btnClearAll.addEventListener('click', () => {
+            filesData = [];
+            updateUI();
+            showToast("已清空所有上傳檔案", "info");
+        });
+
+        function calculateSummary() {
+            let totalPages = 0;
+            filesData.forEach(item => {
+                if (item.rangeText.trim() === '') {
+                    totalPages += item.pageCount;
+                } else {
+                    const parsed = parsePageRange(item.rangeText, item.pageCount);
+                    totalPages += parsed.length;
+                }
+            });
+
+            summaryCount.textContent = `${filesData.length} 個`;
+            summaryPages.textContent = `${totalPages} 頁`;
+            btnMerge.disabled = filesData.length === 0;
+        }
+
+        function parsePageRange(rangeStr, maxPages) {
+            const indices = [];
+            const parts = rangeStr.split(',');
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+
+                if (trimmed.includes('-')) {
+                    const [startStr, endStr] = trimmed.split('-');
+                    const start = parseInt(startStr, 10);
+                    const end = parseInt(endStr, 10);
+                    if (!isNaN(start) && !isNaN(end)) {
+                        const s = Math.max(1, start) - 1;
+                        const e = Math.min(maxPages, end) - 1;
+                        for (let i = s; i <= e; i++) {
+                            if (i >= 0 && i < maxPages) indices.push(i);
+                        }
+                    }
+                } else {
+                    const pageNum = parseInt(trimmed, 10);
+                    if (!isNaN(pageNum)) {
+                        const idx = pageNum - 1;
+                        if (idx >= 0 && idx < maxPages) {
+                            indices.push(idx);
+                        }
+                    }
+                }
+            }
+            return [...new Set(indices)];
+        }
+
+        function updateUI() {
+            if (filesData.length === 0) {
+                emptyState.classList.remove('hidden');
+                fileListContainer.innerHTML = '';
+                btnClearAll.classList.add('hidden');
+                instructions.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                btnClearAll.classList.remove('hidden');
+                instructions.classList.remove('hidden');
+
+                fileListContainer.innerHTML = filesData.map((item, index) => {
+                    const isFirst = index === 0;
+                    const isLast = index === filesData.length - 1;
+                    
+                    return `
+                        <div class="bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all duration-200">
+                            <div class="flex items-center space-x-3 w-full md:w-auto">
+                                <div class="bg-indigo-500/10 text-indigo-400 p-2.5 rounded-lg flex-shrink-0">
+                                    <i data-lucide="file-text" class="w-6 h-6"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-slate-100 font-medium text-sm truncate max-w-[200px] sm:max-w-[320px]" title="${item.name}">
+                                        ${item.name}
+                                    </h4>
+                                    <div class="flex gap-2 text-xs text-slate-500 mt-0.5">
+                                        <span>${item.sizeText}</span>
+                                        <span>•</span>
+                                        <span>共 ${item.pageCount} 頁</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full md:w-48 lg:w-64">
+                                <div class="relative">
+                                    <input type="text" 
+                                        placeholder="選填頁碼 (例如: 1-3, 5)" 
+                                        value="${item.rangeText}"
+                                        oninput="updateRangeText(${index}, this.value)"
+                                        class="w-full bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-lg py-2 px-3 pr-8 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors">
+                                    <i data-lucide="help-circle" class="w-3.5 h-3.5 text-slate-600 absolute right-2.5 top-2.5" title="留空合併全部。可以使用數字、連續範圍（1-3），多個範圍以逗號分隔。"></i>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between w-full md:w-auto gap-2">
+                                <div class="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800">
+                                    <button onclick="moveUp(${index})" ${isFirst ? 'disabled' : ''} 
+                                        class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white disabled:text-slate-700 disabled:hover:bg-transparent rounded transition-colors">
+                                        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="h-4 w-px bg-slate-800"></div>
+                                    <button onclick="moveDown(${index})" ${isLast ? 'disabled' : ''} 
+                                        class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white disabled:text-slate-700 disabled:hover:bg-transparent rounded transition-colors">
+                                        <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+
+                                <button onclick="deleteFile(${index})" 
+                                    class="p-2 bg-slate-900 hover:bg-rose-950/30 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900/50 rounded-lg transition-colors">
+                                    <i data-lucide="trash" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            }
+            calculateSummary();
+        }
+
+        btnMerge.addEventListener('click', async () => {
+            if (filesData.length === 0) return;
+
+            showLoader("正在匯整與重新建構 PDF，請勿關閉網頁...", true);
+
+            setTimeout(async () => {
+                try {
+                    const mergedPdf = await PDFLib.PDFDocument.create();
+
+                    for (const item of filesData) {
+                        const srcPdf = await PDFLib.PDFDocument.load(item.buffer, { ignoreEncryption: true });
+                        const maxPages = srcPdf.getPageCount();
+
+                        let targetIndices = [];
+                        if (item.rangeText.trim() !== '') {
+                            targetIndices = parsePageRange(item.rangeText, maxPages);
+                            if (targetIndices.length === 0) {
+                                showToast(`"${item.name}" 設定的頁碼無效，將預設合併全部頁面`, "error");
+                                targetIndices = Array.from({ length: maxPages }, (_, i) => i);
+                            }
+                        } else {
+                            targetIndices = Array.from({ length: maxPages }, (_, i) => i);
+                        }
+
+                        if (targetIndices.length > 0) {
+                            const copiedPages = await mergedPdf.copyPages(srcPdf, targetIndices);
+                            copiedPages.forEach(page => mergedPdf.addPage(page));
+                        }
+                    }
+
+                    const mergedPdfBytes = await mergedPdf.save({ useObjectStreams: true });
+                    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                    
+                    let outName = outputFilenameInput.value.trim();
+                    if (!outName) outName = 'merged_document';
+                    
+                    await triggerDownload(blob, `${outName}.pdf`);
+                } catch (error) {
+                    console.error(error);
+                    showToast("合併過程中發生錯誤，請重新確認檔案是否受損。", "error");
+                } finally {
+                    showLoader("", false);
+                }
+            }, 300);
+        });
+
+
+        // ==================== BATCH COMPRESS LOGIC ====================
+        compressDropzone.addEventListener('click', () => compressFileInput.click());
+        compressFileInput.addEventListener('change', handleBatchCompressSelection);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            compressDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                compressDropzone.classList.add('border-purple-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            compressDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                compressDropzone.classList.remove('border-purple-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        compressDropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files.length > 0) {
+                loadBatchCompressFiles(dt.files);
+            }
+        });
+
+        function handleBatchCompressSelection(e) {
+            if (e.target.files.length > 0) {
+                loadBatchCompressFiles(e.target.files);
+            }
+            compressFileInput.value = '';
+        }
+
+        // Toggle Compression Engine
+        function setCompressEngine(engine) {
+            currentCompressEngine = engine;
+            const vectorBtn = document.getElementById('engine-vector-btn');
+            const rasterBtn = document.getElementById('engine-raster-btn');
+
+            if (engine === 'vector') {
+                vectorBtn.className = "py-2 text-xs font-semibold rounded-lg text-white bg-purple-600 shadow-sm transition-all";
+                rasterBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all";
+                vectorOptionsBox.classList.remove('hidden');
+                rasterOptionsBox.classList.add('hidden');
+            } else {
+                rasterBtn.className = "py-2 text-xs font-semibold rounded-lg text-white bg-purple-600 shadow-sm transition-all";
+                vectorBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all";
+                rasterOptionsBox.classList.remove('hidden');
+                vectorOptionsBox.classList.add('hidden');
+            }
+
+            updateCompressUI();
+        }
+
+        // Handle presets inside Raster Engine Panel
+        function setRasterPreset(type, value, element) {
+            const siblingButtons = element.parentNode.querySelectorAll('button');
+            siblingButtons.forEach(btn => {
+                btn.className = "py-1 text-[11px] font-semibold rounded bg-slate-900 text-slate-300";
+            });
+
+            element.className = "py-1 text-[11px] font-semibold rounded bg-purple-600 text-white font-bold";
+
+            if (type === 'scale') {
+                rasterScale = value;
+            } else if (type === 'quality') {
+                rasterQuality = value;
+            }
+
+            updateCompressUI();
+        }
+
+        // Parse and store batch files
+        async function loadBatchCompressFiles(files) {
+            const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+            if (pdfFiles.length === 0 && files.length > 0) {
+                showToast("壓縮功能僅支援上傳 PDF 檔案！", "error");
+                return;
+            }
+
+            showLoader("載入檔案中，分析原檔結構與元數據...", true);
+            
+            let loadedCount = 0;
+            for (const file of pdfFiles) {
+                try {
+                    const buffer = await file.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+                    const pageCount = pdfDoc.getPageCount();
+
+                    compressFilesData.push({
+                        id: crypto.randomUUID(),
+                        file: file,
+                        name: file.name,
+                        sizeRaw: file.size,
+                        sizeText: formatBytes(file.size),
+                        pageCount: pageCount,
+                        buffer: buffer,
+                        status: 'waiting',       // 'waiting' | 'processing' | 'success' | 'failed'
+                        compressedSize: null,
+                        compressedBytes: null
+                    });
+                    loadedCount++;
+                } catch (error) {
+                    console.error(error);
+                    showToast(`無法解析 "${file.name}"，可能已被加密。`, "error");
+                }
+            }
+
+            showLoader("", false);
+            if (loadedCount > 0) {
+                showToast(`成功載入 ${loadedCount} 個 PDF 待壓縮檔案`, "success");
+            }
+            updateCompressUI();
+        }
+
+        // Trigger dynamic refresh on slider/radio changes
+        function onCompressionLevelChange() {
+            updateCompressUI();
+        }
+
+        // Clear All files in compression list
+        function clearCompressList() {
+            compressFilesData = [];
+            updateCompressUI();
+            showToast("壓縮清單已清空", "info");
+        }
+
+        // Helper: Convert Base64 payload back to Uint8Array safely for pdf-lib injection
+        function base64ToUint8Array(base64) {
+            const raw = window.atob(base64);
+            const rawLength = raw.length;
+            const array = new Uint8Array(new ArrayBuffer(rawLength));
+            for (let i = 0; i < rawLength; i++) {
+                array[i] = raw.charCodeAt(i);
+            }
+            return array;
+        }
+
+        // Update Batch Compress list UI dynamically
+        function updateCompressUI() {
+            let ratioFactor = 0.5;
+
+            if (currentCompressEngine === 'vector') {
+                const activeLevel = document.querySelector('input[name="compression-level"]:checked').value;
+                ratioFactor = VECTOR_RATIOS[activeLevel];
+            } else {
+                const qFactor = rasterQuality;
+                const sFactor = rasterScale === 1.0 ? 0.25 : (rasterScale === 1.3 ? 0.38 : 0.55);
+                ratioFactor = Math.min(0.9, qFactor * sFactor * 1.2);
+            }
+
+            if (compressFilesData.length === 0) {
+                compressEmptyState.classList.remove('hidden');
+                compressFileListContainer.innerHTML = '';
+                btnCompressClear.classList.add('hidden');
+                btnCompressDownloadAll.classList.add('hidden');
+                btnCompressStart.disabled = true;
+
+                // Reset summary
+                compressSummaryCount.textContent = "0 個";
+                compressSummaryOrig.textContent = "0 KB";
+                compressSummaryEst.textContent = "~0 KB";
+            } else {
+                compressEmptyState.classList.add('hidden');
+                btnCompressClear.classList.remove('hidden');
+                btnCompressStart.disabled = false;
+
+                const successExist = compressFilesData.some(item => item.status === 'success');
+                if (successExist) {
+                    btnCompressDownloadAll.classList.remove('hidden');
+                } else {
+                    btnCompressDownloadAll.classList.add('hidden');
+                }
+
+                let totalOriginal = 0;
+                let totalEstimated = 0;
+
+                // Draw HTML List with dynamic estimation calculations
+                compressFileListContainer.innerHTML = compressFilesData.map((item, index) => {
+                    totalOriginal += item.sizeRaw;
+
+                    let estimateText = "";
+                    
+                    if (item.status === 'waiting') {
+                        const estBytes = Math.round(item.sizeRaw * ratioFactor);
+                        totalEstimated += estBytes;
+                        estimateText = `<span class="text-purple-400 font-semibold">預估: ~${formatBytes(estBytes)} (-${Math.round((1 - ratioFactor) * 100)}%)</span>`;
+                    } else if (item.status === 'processing') {
+                        estimateText = `<span class="text-blue-400 animate-pulse font-semibold">正在深度壓縮與重建結構中...</span>`;
+                    } else if (item.status === 'success') {
+                        totalEstimated += item.compressedSize;
+                        const finalRatio = ((1 - (item.compressedSize / item.sizeRaw)) * 100).toFixed(1);
+                        estimateText = `<span class="text-emerald-400 font-bold">實際: ${formatBytes(item.compressedSize)} (-${finalRatio}%)</span>`;
+                    } else {
+                        estimateText = `<span class="text-rose-400 font-semibold">處理失敗 (請更換為無損引擎)</span>`;
+                    }
+
+                    let statusBadge = '';
+                    switch(item.status) {
+                        case 'waiting':
+                            statusBadge = `<span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-slate-800 text-slate-400 rounded-full border border-slate-700/50"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>等待中</span>`;
+                            break;
+                        case 'processing':
+                            statusBadge = `<span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/25 animate-pulse"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>執行中</span>`;
+                            break;
+                        case 'success':
+                            statusBadge = `<span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/25"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>完成</span>`;
+                            break;
+                        case 'failed':
+                            statusBadge = `<span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-rose-500/10 text-rose-400 rounded-full border border-rose-500/25"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>失敗</span>`;
+                            break;
+                    }
+
+                    let actionsHtml = '';
+                    if (item.status === 'success') {
+                        actionsHtml = `
+                            <button onclick="downloadSingleCompressed('${item.id}')" class="p-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-lg transition-colors flex items-center justify-center" title="儲存至自訂位置">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                    } else if (item.status === 'waiting') {
+                        actionsHtml = `
+                            <button onclick="processSingleCompression('${item.id}')" class="p-2 bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/30 rounded-lg transition-all flex items-center justify-center" title="單個執行壓縮">
+                                <i data-lucide="play" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                    }
+
+                    return `
+                        <div class="bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all duration-200">
+                            <!-- Left Section: Basic PDF Info -->
+                            <div class="flex items-center space-x-3 w-full md:w-1/3 min-w-0">
+                                <div class="bg-purple-500/10 text-purple-400 p-2.5 rounded-lg flex-shrink-0">
+                                    <i data-lucide="file-down" class="w-6 h-6"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-slate-100 font-medium text-sm truncate" title="${item.name}">${item.name}</h4>
+                                    <div class="flex gap-2 text-xs text-slate-500 mt-0.5">
+                                        <span>原大小: ${item.sizeText}</span>
+                                        <span>•</span>
+                                        <span>共 ${item.pageCount} 頁</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Middle Section: Size Estimation/Actual Report -->
+                            <div class="w-full md:w-2/5 flex flex-col justify-center text-xs md:text-sm">
+                                <div class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5 font-semibold">
+                                    ${currentCompressEngine === 'vector' ? '向量結構預估' : '影像重壓縮預估'}
+                                </div>
+                                ${estimateText}
+                            </div>
+
+                            <!-- Right Section: Status Indicator & Individual Actions -->
+                            <div class="flex items-center justify-between md:justify-end w-full md:w-auto gap-3 shrink-0">
+                                ${statusBadge}
+                                
+                                <div class="flex items-center gap-1.5">
+                                    ${actionsHtml}
+                                    <button onclick="removeCompressItem('${item.id}')" class="p-2 bg-slate-900 hover:bg-rose-950/30 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900/50 rounded-lg transition-colors" title="移出清單">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+
+                compressSummaryCount.textContent = `${compressFilesData.length} 個`;
+                compressSummaryOrig.textContent = formatBytes(totalOriginal);
+                compressSummaryEst.textContent = `~${formatBytes(totalEstimated)}`;
+            }
+        }
+
+        // Single item removal from compression queue
+        function removeCompressItem(id) {
+            compressFilesData = compressFilesData.filter(item => item.id !== id);
+            updateCompressUI();
+            showToast("已從清單中移除", "info");
+        }
+
+        // Core compression routine containing dual-engine branching logic
+        async function compressSingleBytes(item, engine, settings) {
+            if (engine === 'vector') {
+                const srcPdfDoc = await PDFLib.PDFDocument.load(item.buffer, { ignoreEncryption: true });
+                const compressedPdfDoc = await PDFLib.PDFDocument.create();
+
+                const pageIndices = srcPdfDoc.getPageIndices();
+                const copiedPages = await compressedPdfDoc.copyPages(srcPdfDoc, pageIndices);
+                copiedPages.forEach(p => compressedPdfDoc.addPage(p));
+
+                if (settings.level === 'medium' || settings.level === 'high') {
+                    compressedPdfDoc.setTitle('');
+                    compressedPdfDoc.setAuthor('');
+                    compressedPdfDoc.setSubject('');
+                    compressedPdfDoc.setKeywords([]);
+                    compressedPdfDoc.setProducer('PDF 雙效工具箱 Pro');
+                    compressedPdfDoc.setCreator('PDF-LIB Core Optimizer');
+                }
+
+                let saveOptions = { useObjectStreams: true };
+                if (settings.level === 'low') {
+                    saveOptions.useObjectStreams = false;
+                }
+
+                return await compressedPdfDoc.save(saveOptions);
+            } else {
+                const loadingTask = pdfjsLib.getDocument({ data: item.buffer });
+                const pdf = await loadingTask.promise;
+                const totalPageCount = pdf.numPages;
+
+                const compressedPdfDoc = await PDFLib.PDFDocument.create();
+
+                for (let i = 1; i <= totalPageCount; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: settings.scale });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    const imgDataUrl = canvas.toDataURL('image/jpeg', settings.quality);
+                    const base64Data = imgDataUrl.split(',')[1];
+                    const jpgBytes = base64ToUint8Array(base64Data);
+
+                    const embeddedImg = await compressedPdfDoc.embedJpg(jpgBytes);
+                    const newPage = compressedPdfDoc.addPage([embeddedImg.width, embeddedImg.height]);
+                    newPage.drawImage(embeddedImg, {
+                        x: 0,
+                        y: 0,
+                        width: embeddedImg.width,
+                        height: embeddedImg.height
+                    });
+                }
+
+                return await compressedPdfDoc.save({ useObjectStreams: true });
+            }
+        }
+
+        // Process a single PDF Compression task inside the array
+        async function processSingleCompression(id) {
+            const index = compressFilesData.findIndex(item => item.id === id);
+            if (index === -1) return;
+
+            const item = compressFilesData[index];
+            item.status = 'processing';
+            updateCompressUI();
+
+            const levelVal = document.querySelector('input[name="compression-level"]:checked').value;
+
+            setTimeout(async () => {
+                try {
+                    const outputBytes = await compressSingleBytes(item, currentCompressEngine, {
+                        level: levelVal,
+                        scale: rasterScale,
+                        quality: rasterQuality
+                    });
+
+                    item.compressedBytes = outputBytes;
+                    item.compressedSize = outputBytes.byteLength;
+                    item.status = 'success';
+                    showToast(`"${item.name}" 壓縮優化成功！`, "success");
+                } catch (error) {
+                    console.error(error);
+                    item.status = 'failed';
+                    showToast(`無法壓縮 "${item.name}"，請確認無密碼鎖定，或嘗試向量無損引擎。`, "error");
+                } finally {
+                    updateCompressUI();
+                }
+            }, 100);
+        }
+
+        // Process all items sequentially
+        async function processAllCompressions() {
+            const waitingItems = compressFilesData.filter(item => item.status === 'waiting' || item.status === 'failed');
+            if (waitingItems.length === 0) {
+                showToast("清單中無任何等待中或需要重新處理的檔案！", "info");
+                return;
+            }
+
+            showLoader(`正在批量處理中，大檔案使用極限壓縮耗時較長，請勿關閉網頁 (剩餘 ${waitingItems.length} 個)...`, true);
+
+            const levelVal = document.querySelector('input[name="compression-level"]:checked').value;
+
+            for (const item of waitingItems) {
+                item.status = 'processing';
+                updateCompressUI();
+
+                try {
+                    const outputBytes = await compressSingleBytes(item, currentCompressEngine, {
+                        level: levelVal,
+                        scale: rasterScale,
+                        quality: rasterQuality
+                    });
+
+                    item.compressedBytes = outputBytes;
+                    item.compressedSize = outputBytes.byteLength;
+                    item.status = 'success';
+                } catch (error) {
+                    console.error(error);
+                    item.status = 'failed';
+                }
+                updateCompressUI();
+            }
+
+            showLoader("", false);
+            showToast("批量處理程序已全部結束！", "success");
+        }
+
+        // Individual Download Link Trigger with customized picker
+        async function downloadSingleCompressed(id) {
+            const item = compressFilesData.find(item => item.id === id);
+            if (!item || !item.compressedBytes) return;
+
+            const blob = new Blob([item.compressedBytes], { type: 'application/pdf' });
+            const origName = item.name.replace(/\.pdf$/i, '');
+            
+            await triggerDownload(blob, `${origName}_compressed.pdf`);
+        }
+
+        // Sequential Download with customized path picker per document
+        async function downloadAllCompressed() {
+            const successFiles = compressFilesData.filter(item => item.status === 'success');
+            if (successFiles.length === 0) return;
+
+            showToast("準備開啟儲存對話框，請依序為檔案命名及選擇存檔資料夾...", "info");
+
+            for (let i = 0; i < successFiles.length; i++) {
+                const item = successFiles[i];
+                const blob = new Blob([item.compressedBytes], { type: 'application/pdf' });
+                const origName = item.name.replace(/\.pdf$/i, '');
+                
+                await triggerDownload(blob, `${origName}_compressed.pdf`);
+            }
+        }
+
+
+        // ==================== PDF TO PHOTO LOGIC ====================
+        photoDropzone.addEventListener('click', () => photoFileInput.click());
+        photoFileInput.addEventListener('change', handlePhotoFileSelection);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            photoDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                photoDropzone.classList.add('border-emerald-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            photoDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                photoDropzone.classList.remove('border-emerald-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        photoDropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files.length > 0) {
+                loadPhotoPdfFile(dt.files[0]);
+            }
+        });
+
+        function handlePhotoFileSelection(e) {
+            if (e.target.files.length > 0) {
+                loadPhotoPdfFile(e.target.files[0]);
+            }
+            photoFileInput.value = '';
+        }
+
+        // Load targeted PDF file for Image conversions
+        async function loadPhotoPdfFile(file) {
+            if (file.type !== 'application/pdf') {
+                showToast("本功能僅限解析 PDF 檔案！", "error");
+                return;
+            }
+
+            showLoader("正在讀取文件屬性與基本頁數...", true);
+            try {
+                const buffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+                const pageCount = pdfDoc.getPageCount();
+
+                photoFileState = {
+                    file: file,
+                    name: file.name,
+                    sizeRaw: file.size,
+                    sizeText: formatBytes(file.size),
+                    pageCount: pageCount,
+                    buffer: buffer
+                };
+
+                photoMetaName.textContent = file.name;
+                photoMetaInfo.textContent = `檔案大小: ${photoFileState.sizeText} • 共計 ${pageCount} 頁`;
+
+                photoEmptyState.classList.add('hidden');
+                photoFileMetaCard.classList.remove('hidden');
+                btnPhotoStart.disabled = false;
+                btnPhotoClear.classList.remove('hidden');
+
+                photoGridContainer.innerHTML = '';
+                photoGridContainer.classList.add('hidden');
+                btnPhotoDownloadAll.classList.add('hidden');
+                convertedPhotos = [];
+
+                showToast(`成功解析 "${file.name}"！請點擊「開始轉換」按鈕。`, "success");
+            } catch (error) {
+                console.error(error);
+                showToast("無法分析 PDF 檔案，可能受到密碼保護。", "error");
+            } finally {
+                showLoader("", false);
+            }
+        }
+
+        // Toggle image format PNG vs JPEG
+        function setPhotoFormat(format) {
+            photoOutputFormat = format;
+            const pngBtn = document.getElementById('photo-format-png-btn');
+            const jpgBtn = document.getElementById('photo-format-jpg-btn');
+
+            if (format === 'image/png') {
+                pngBtn.className = "py-2 text-xs font-semibold rounded-lg text-white bg-emerald-600 shadow-sm transition-all";
+                jpgBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all";
+            } else {
+                jpgBtn.className = "py-2 text-xs font-semibold rounded-lg text-white bg-emerald-600 shadow-sm transition-all";
+                pngBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-100 transition-all";
+            }
+        }
+
+        // Set DPI preset value
+        function setPhotoDpi(scale, activeId) {
+            photoOutputScale = scale;
+            const buttons = ['photo-dpi-72', 'photo-dpi-150', 'photo-dpi-300'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (id === activeId) {
+                    btn.className = "py-1.5 text-xs rounded bg-emerald-600 text-white font-bold transition-all";
+                } else {
+                    btn.className = "py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all";
+                }
+            });
+        }
+
+        // Clean up Photo conversions state
+        function clearPhotoData() {
+            photoFileState = null;
+            convertedPhotos = [];
+            photoEmptyState.classList.remove('hidden');
+            photoFileMetaCard.classList.add('hidden');
+            photoGridContainer.classList.add('hidden');
+            photoGridContainer.innerHTML = '';
+            btnPhotoStart.disabled = true;
+            btnPhotoDownloadAll.classList.add('hidden');
+            btnPhotoClear.classList.add('hidden');
+            showToast("已清除轉換資料區", "info");
+        }
+
+        // Rendering core execution: PDF to Photo
+        async function convertPdfToPhotos() {
+            if (!photoFileState) return;
+
+            const total = photoFileState.pageCount;
+            showLoader("正在準備渲染引擎與高解析度圖層 (0/" + total + " 頁)...", true);
+
+            setTimeout(async () => {
+                try {
+                    const loadingTask = pdfjsLib.getDocument({ data: photoFileState.buffer });
+                    const pdf = await loadingTask.promise;
+
+                    photoGridContainer.innerHTML = '';
+                    convertedPhotos = [];
+
+                    for (let i = 1; i <= total; i++) {
+                        loaderText.textContent = "正在以高解析度渲染第 " + i + "/" + total + " 頁中，請勿關閉網頁...";
+
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: photoOutputScale });
+
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+
+                        context.fillStyle = '#ffffff';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                        const dataUrl = canvas.toDataURL(photoOutputFormat, photoOutputFormat === 'image/jpeg' ? 0.92 : 1.0);
+                        convertedPhotos.push({
+                            pageNum: i,
+                            dataUrl: dataUrl
+                        });
+                    }
+
+                    renderPhotoGrid();
+                    showToast("PDF 頁面已成功渲染為圖片！", "success");
+                } catch (error) {
+                    console.error(error);
+                    showToast("影像轉換失敗，可能記憶體不足或檔案不完整，請降低解析度 DPI 再試一次。", "error");
+                } finally {
+                    showLoader("", false);
+                }
+            }, 200);
+        }
+
+        // Build HTML previews grid
+        function renderPhotoGrid() {
+            photoGridContainer.classList.remove('hidden');
+            btnPhotoDownloadAll.classList.remove('hidden');
+
+            const fileExtension = photoOutputFormat === 'image/png' ? 'png' : 'jpg';
+
+            photoGridContainer.innerHTML = convertedPhotos.map(photo => {
+                return `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden group hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between">
+                        <div class="relative aspect-[3/4] w-full bg-slate-900 overflow-hidden flex items-center justify-center p-3">
+                            <img src="${photo.dataUrl}" alt="第 ${photo.pageNum} 頁" class="max-h-full max-w-full object-contain shadow-md rounded border border-slate-800">
+                            <span class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-sm border border-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                第 ${photo.pageNum} 頁
+                            </span>
+                        </div>
+                        <div class="p-3 border-t border-slate-800 flex items-center justify-between bg-slate-900/40">
+                            <span class="text-[10px] text-slate-500 uppercase font-semibold">${fileExtension.toUpperCase()} 圖片格式</span>
+                            <button onclick="downloadSinglePhoto(${photo.pageNum}, '${photo.dataUrl}')" 
+                                class="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-lg flex items-center gap-1 text-xs font-bold transition-all shadow-sm">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>下載</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Single Image Download using standard system file picker
+        async function downloadSinglePhoto(pageNum, dataUrl) {
+            const ext = photoOutputFormat === 'image/png' ? 'png' : 'jpg';
+            const baseName = photoFileState.name.replace(/\.pdf$/i, '');
+            
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            
+            await triggerDownload(blob, `${baseName}_page_${pageNum}.${ext}`);
+        }
+
+        // Sequential multi-image download bypass
+        async function downloadAllPhotos() {
+            if (convertedPhotos.length === 0) return;
+
+            showToast("正在建立批量下載，請依序點選存檔資料夾及確認檔名...", "info");
+            const ext = photoOutputFormat === 'image/png' ? 'png' : 'jpg';
+            const baseName = photoFileState.name.replace(/\.pdf$/i, '');
+
+            for (let i = 0; i < convertedPhotos.length; i++) {
+                const photo = convertedPhotos[i];
+                const res = await fetch(photo.dataUrl);
+                const blob = await res.blob();
+                
+                await triggerDownload(blob, `${baseName}_page_${photo.pageNum}.${ext}`);
+            }
+        }
+
+
+        // ==================== PDF TO PPTX LOGIC ====================
+        pptxDropzone.addEventListener('click', () => pptxFileInput.click());
+        pptxFileInput.addEventListener('change', handlePptxFileSelection);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            pptxDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                pptxDropzone.classList.add('border-orange-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            pptxDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                pptxDropzone.classList.remove('border-orange-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        pptxDropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files.length > 0) {
+                loadPptxPdfFile(dt.files[0]);
+            }
+        });
+
+        function handlePptxFileSelection(e) {
+            if (e.target.files.length > 0) {
+                loadPptxPdfFile(e.target.files[0]);
+            }
+            pptxFileInput.value = '';
+        }
+
+        // Load targeted PDF file for PPTX conversions
+        async function loadPptxPdfFile(file) {
+            if (file.type !== 'application/pdf') {
+                showToast("本功能僅限解析 PDF 檔案！", "error");
+                return;
+            }
+
+            showLoader("正在讀起文件屬性及長寬比例...", true);
+            try {
+                const buffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+                const pageCount = pdfDoc.getPageCount();
+
+                pptxFileState = {
+                    file: file,
+                    name: file.name,
+                    sizeRaw: file.size,
+                    sizeText: formatBytes(file.size),
+                    pageCount: pageCount,
+                    buffer: buffer
+                };
+
+                pptxMetaName.textContent = file.name;
+                pptxMetaInfo.textContent = `檔案大小: ${pptxFileState.sizeText} • 共計 ${pageCount} 頁`;
+
+                pptxEmptyState.classList.add('hidden');
+                pptxFileMetaCard.classList.remove('hidden');
+                btnPptxStart.disabled = false;
+                btnPptxClear.classList.remove('hidden');
+
+                pptxGridContainer.innerHTML = '';
+                pptxGridContainer.classList.add('hidden');
+                convertedPptxPages = [];
+
+                showToast(`成功解析簡報 "${file.name}"！請設定後點擊「開始轉換」按鈕。`, "success");
+            } catch (error) {
+                console.error(error);
+                showToast("無法分析 PDF 檔案，可能受到密碼保護或檔案不完整。", "error");
+            } finally {
+                showLoader("", false);
+            }
+        }
+
+        // Set PPTX DPI Resolution scaler
+        function setPptxDpi(scale, activeId) {
+            pptxOutputScale = scale;
+            const buttons = ['pptx-dpi-72', 'pptx-dpi-150', 'pptx-dpi-300'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (id === activeId) {
+                    btn.className = "py-1.5 text-xs rounded bg-orange-600 text-white font-bold transition-all";
+                } else {
+                    btn.className = "py-1.5 text-xs rounded bg-slate-900 text-slate-300 hover:text-white transition-all";
+                }
+            });
+        }
+
+        // Clean up PPTX conversions state
+        function clearPptxData() {
+            pptxFileState = null;
+            convertedPptxPages = [];
+            pptxEmptyState.classList.remove('hidden');
+            pptxFileMetaCard.classList.add('hidden');
+            pptxGridContainer.classList.add('hidden');
+            pptxGridContainer.innerHTML = '';
+            btnPptxStart.disabled = true;
+            btnPptxClear.classList.add('hidden');
+            showToast("已清除 PowerPoint 轉換工作區", "info");
+        }
+
+        // Core PPTX builder sequence
+        async function convertPdfToPptx() {
+            if (!pptxFileState) return;
+
+            const total = pptxFileState.pageCount;
+            showLoader("正在初使化 PptxGenJS 投影片核心引擎...", true);
+
+            setTimeout(async () => {
+                try {
+                    const pptx = new PptxGenJS();
+                    const loadingTask = pdfjsLib.getDocument({ data: pptxFileState.buffer });
+                    const pdf = await loadingTask.promise;
+
+                    const firstPage = await pdf.getPage(1);
+                    const firstViewport = firstPage.getViewport({ scale: 1.0 });
+
+                    const layoutMode = document.getElementById('pptx-layout-mode').value;
+                    if (layoutMode === 'auto') {
+                        const wInches = firstViewport.width / 72;
+                        const hInches = firstViewport.height / 72;
+                        pptx.defineLayout({ name: 'PDF_AUTO', width: wInches, height: hInches });
+                        pptx.layout = 'PDF_AUTO';
+                    } else if (layoutMode === '169') {
+                        pptx.layout = 'LAYOUT_WIDE';
+                    } else {
+                        pptx.layout = 'LAYOUT_4x3';
+                    }
+
+                    pptxGridContainer.innerHTML = '';
+                    pptxGridContainer.classList.remove('hidden');
+                    convertedPptxPages = [];
+
+                    for (let i = 1; i <= total; i++) {
+                        loaderText.textContent = "正在將 PDF 第 " + i + "/" + total + " 頁匯出為投影片，請勿關閉網頁...";
+
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: pptxOutputScale });
+
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+
+                        context.fillStyle = '#ffffff';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+                        
+                        const slide = pptx.addSlide();
+                        slide.addImage({
+                            data: dataUrl,
+                            x: 0,
+                            y: 0,
+                            w: '100%',
+                            h: '100%'
+                        });
+
+                        convertedPptxPages.push({
+                            pageNum: i,
+                            dataUrl: dataUrl
+                        });
+
+                        appendPptxPreviewCard(i, dataUrl);
+                    }
+
+                    showLoader("投影片渲染完成！正在生成二進位串流，請選擇存檔位置...", true);
+                    
+                    const blob = await pptx.write({ outputType: 'blob' });
+
+                    let outName = document.getElementById('pptx-output-filename').value.trim();
+                    if (!outName) outName = 'converted_presentation';
+
+                    await triggerDownload(blob, `${outName}.pptx`);
+                    showToast("PowerPoint 投影片建立完成！", "success");
+                } catch (error) {
+                    console.error(error);
+                    showToast("轉換過程發生異常，建議您降低解析度 (DPI) 以減少記憶體開銷。", "error");
+                } finally {
+                    showLoader("", false);
+                }
+            }, 300);
+        }
+
+        function appendPptxPreviewCard(pageNum, dataUrl) {
+            const card = document.createElement('div');
+            card.className = "bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-lg hover:border-orange-500/50 transition-colors duration-200 flex flex-col justify-between";
+            card.innerHTML = `
+                <div class="relative aspect-[4/3] w-full bg-slate-900 overflow-hidden flex items-center justify-center p-2">
+                    <img src="${dataUrl}" alt="投影片 ${pageNum}" class="max-h-full max-w-full object-contain shadow rounded">
+                    <span class="absolute top-2 left-2 bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        投影片 ${pageNum}
+                    </span>
+                </div>
+                <div class="p-2.5 bg-slate-900/40 text-center text-xs text-slate-400 border-t border-slate-850">
+                    版面尺寸適配完成
+                </div>
+            `;
+            pptxGridContainer.appendChild(card);
+        }
+
+
+        // ==================== PHOTO TO PDF (TAB 5) LOGIC ====================
+        topdfDropzone.addEventListener('click', () => topdfFileInput.click());
+        topdfFileInput.addEventListener('change', handleToPdfFileSelection);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            topdfDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                topdfDropzone.classList.add('border-emerald-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            topdfDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                topdfDropzone.classList.remove('border-emerald-500', 'bg-slate-900/40');
+            }, false);
+        });
+
+        topdfDropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files.length > 0) {
+                loadImagesForPdf(dt.files);
+            }
+        });
+
+        function handleToPdfFileSelection(e) {
+            if (e.target.files.length > 0) {
+                loadImagesForPdf(e.target.files);
+            }
+            topdfFileInput.value = '';
+        }
+
+        // Process and structure uploaded images
+        async function loadImagesForPdf(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            if (imageFiles.length === 0 && files.length > 0) {
+                showToast("所選檔案不包含任何有效的圖片檔！", "error");
+                return;
+            }
+
+            showLoader("正在讀取並建立圖片預覽...", true);
+
+            for (const file of imageFiles) {
+                try {
+                    const reader = new FileReader();
+                    
+                    const loadPromise = new Promise((resolve) => {
+                        reader.onload = (e) => resolve(e.target.result);
+                    });
+                    
+                    reader.readAsDataURL(file);
+                    const dataUrl = await loadPromise;
+
+                    // Load Image object to grab true width & height dimensions
+                    const img = new Image();
+                    const dimensionsPromise = new Promise((resolve) => {
+                        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                    });
+                    img.src = dataUrl;
+                    const dims = await dimensionsPromise;
+
+                    // Get ArrayBuffer for pdf-lib embedding
+                    const buffer = await file.arrayBuffer();
+
+                    photoToPdfData.push({
+                        id: crypto.randomUUID(),
+                        file: file,
+                        name: file.name,
+                        sizeText: formatBytes(file.size),
+                        width: dims.w,
+                        height: dims.h,
+                        dataUrl: dataUrl,
+                        buffer: buffer
+                    });
+                } catch (error) {
+                    console.error(error);
+                    showToast(`無法讀取圖片: "${file.name}"`, "error");
+                }
+            }
+
+            showLoader("", false);
+            updateToPdfUI();
+            showToast(`成功匯入 ${imageFiles.length} 張圖片！`, "success");
+        }
+
+        // Re-render sorting list of images
+        function updateToPdfUI() {
+            if (photoToPdfData.length === 0) {
+                topdfEmptyState.classList.remove('hidden');
+                topdfListContainer.classList.add('hidden');
+                btnToPdfClear.classList.add('hidden');
+                btnToPdfStart.disabled = true;
+            } else {
+                topdfEmptyState.classList.add('hidden');
+                topdfListContainer.classList.remove('hidden');
+                btnToPdfClear.classList.remove('hidden');
+                btnToPdfStart.disabled = false;
+
+                topdfListContainer.innerHTML = photoToPdfData.map((item, index) => {
+                    const isFirst = index === 0;
+                    const isLast = index === photoToPdfData.length - 1;
+
+                    return `
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <!-- Preview Thumbnail & Info -->
+                            <div class="flex items-center space-x-3 w-full sm:w-auto min-w-0">
+                                <div class="w-14 h-14 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                                    <img src="${item.dataUrl}" alt="預覽" class="max-w-full max-h-full object-contain">
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-sm font-medium text-slate-100 truncate max-w-[200px] md:max-w-[350px]" title="${item.name}">${item.name}</h4>
+                                    <div class="flex gap-2 text-xs text-slate-500 mt-1">
+                                        <span>大小: ${item.sizeText}</span>
+                                        <span>•</span>
+                                        <span>解析度: ${item.width}x${item.height}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sorting Action Buttons -->
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 shrink-0">
+                                <span class="bg-slate-900 px-3 py-1 text-slate-400 rounded-md text-xs border border-slate-800">
+                                    第 ${index + 1} 頁
+                                </span>
+
+                                <div class="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800">
+                                    <button onclick="moveImageUp(${index})" ${isFirst ? 'disabled' : ''} 
+                                        class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white disabled:text-slate-700 disabled:hover:bg-transparent rounded transition-colors">
+                                        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="h-4 w-px bg-slate-800"></div>
+                                    <button onclick="moveImageDown(${index})" ${isLast ? 'disabled' : ''} 
+                                        class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white disabled:text-slate-700 disabled:hover:bg-transparent rounded transition-colors">
+                                        <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+
+                                <button onclick="deleteImage(${index})" 
+                                    class="p-2 bg-slate-900 hover:bg-rose-950/30 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900/50 rounded-lg transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            }
+        }
+
+        // Image re-ordering logic
+        function moveImageUp(index) {
+            if (index === 0) return;
+            const temp = photoToPdfData[index];
+            photoToPdfData[index] = photoToPdfData[index - 1];
+            photoToPdfData[index - 1] = temp;
+            updateToPdfUI();
+        }
+
+        function moveImageDown(index) {
+            if (index === photoToPdfData.length - 1) return;
+            const temp = photoToPdfData[index];
+            photoToPdfData[index] = photoToPdfData[index + 1];
+            photoToPdfData[index + 1] = temp;
+            updateToPdfUI();
+        }
+
+        // Remove item from Image list
+        function deleteImage(index) {
+            photoToPdfData.splice(index, 1);
+            updateToPdfUI();
+            showToast("圖片已移出清單", "info");
+        }
+
+        // Reset conversion block
+        function clearToPdfData() {
+            photoToPdfData = [];
+            updateToPdfUI();
+            showToast("工作區已清空", "info");
+        }
+
+        // Compile PDF file from uploaded images locally
+        async function generatePdfFromPhotos() {
+            if (photoToPdfData.length === 0) return;
+
+            showLoader("正在匯整圖片與高精合成 PDF 文件...", true);
+
+            setTimeout(async () => {
+                try {
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+
+                    // Read user specifications
+                    const pageSizeSetting = document.getElementById('topdf-page-size').value;
+                    const orientationSetting = document.getElementById('topdf-orientation').value;
+                    const margin = parseInt(document.getElementById('topdf-margin').value, 10);
+
+                    // Points conversion factors (1 inch = 72 points)
+                    // Standard dimensions
+                    const A4_WIDTH = 595.28;
+                    const A4_HEIGHT = 841.89;
+                    const LETTER_WIDTH = 612;
+                    const LETTER_HEIGHT = 792;
+
+                    for (const item of photoToPdfData) {
+                        let pageW = A4_WIDTH;
+                        let pageH = A4_HEIGHT;
+
+                        // 1. Calculate page boundaries based on standard sizes
+                        if (pageSizeSetting === 'a4') {
+                            pageW = A4_WIDTH;
+                            pageH = A4_HEIGHT;
+                        } else if (pageSizeSetting === 'letter') {
+                            pageW = LETTER_WIDTH;
+                            pageH = LETTER_HEIGHT;
+                        } else {
+                            // "auto": Match the raw aspect ratio in points directly (1px = ~0.75 point)
+                            pageW = item.width * 0.75;
+                            pageH = item.height * 0.75;
+                        }
+
+                        // 2. Adjust for Orientation
+                        let finalPageW = pageW;
+                        let finalPageH = pageH;
+
+                        if (pageSizeSetting !== 'auto') {
+                            let resolveLandscape = false;
+                            if (orientationSetting === 'landscape') {
+                                resolveLandscape = true;
+                            } else if (orientationSetting === 'auto') {
+                                // If image width > height, orient landscape
+                                if (item.width > item.height) {
+                                    resolveLandscape = true;
+                                }
+                            }
+
+                            if (resolveLandscape) {
+                                finalPageW = Math.max(pageW, pageH);
+                                finalPageH = Math.min(pageW, pageH);
+                            } else {
+                                finalPageW = Math.min(pageW, pageH);
+                                finalPageH = Math.max(pageW, pageH);
+                            }
+                        }
+
+                        // 3. Compress / convert image to clean standard JPEG binary stream via Canvas to guarantee pdf-lib embedding safety
+                        const img = new Image();
+                        const loadImgPromise = new Promise((resolve) => {
+                            img.onload = () => resolve();
+                        });
+                        img.src = item.dataUrl;
+                        await loadImgPromise;
+
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = item.width;
+                        canvas.height = item.height;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+
+                        const compressedJpgUrl = canvas.toDataURL('image/jpeg', 0.90);
+                        const base64Bytes = compressedJpgUrl.split(',')[1];
+                        const jpgBytes = base64ToUint8Array(base64Bytes);
+
+                        // Embed JPEG
+                        const embeddedImage = await pdfDoc.embedJpg(jpgBytes);
+
+                        // Add Page
+                        const page = pdfDoc.addPage([finalPageW, finalPageH]);
+
+                        // 4. Calculate drawing layout coordinates respecting borders
+                        const availableW = finalPageW - (margin * 2);
+                        const availableH = finalPageH - (margin * 2);
+
+                        // Image proportions
+                        const imgRatio = embeddedImage.width / embeddedImage.height;
+                        const pageRatio = availableW / availableH;
+
+                        let drawW = availableW;
+                        let drawH = availableH;
+
+                        if (imgRatio > pageRatio) {
+                            // Image is wider than the target page ratio
+                            drawW = availableW;
+                            drawH = availableW / imgRatio;
+                        } else {
+                            // Image is taller than the target page ratio
+                            drawH = availableH;
+                            drawW = availableH * imgRatio;
+                        }
+
+                        // Position coordinates (Centered drawing)
+                        const drawX = margin + ((availableW - drawW) / 2);
+                        const drawY = margin + ((availableH - drawH) / 2);
+
+                        page.drawImage(embeddedImage, {
+                            x: drawX,
+                            y: drawY,
+                            width: drawW,
+                            height: drawH
+                        });
+                    }
+
+                    // Save PDF structure bytes
+                    const pdfBytes = await pdfDoc.save({ useObjectStreams: true });
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                    let filename = document.getElementById('topdf-output-filename').value.trim();
+                    if (!filename) filename = 'images_combined';
+
+                    await triggerDownload(blob, `${filename}.pdf`);
+                    showToast("PDF 建立並存檔成功！", "success");
+                } catch (error) {
+                    console.error(error);
+                    showToast("產生 PDF 檔案失敗，請更換圖片格式再重試一次。", "error");
+                } finally {
+                    showLoader("", false);
+                }
+            }, 300);
+        }
+    </script>
+</body>
+</html>
